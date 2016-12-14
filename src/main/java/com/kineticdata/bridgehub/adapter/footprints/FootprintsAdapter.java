@@ -45,6 +45,20 @@ public class FootprintsAdapter implements BridgeAdapter {
     
     /** Defines the logger */
     protected static final org.slf4j.Logger logger = LoggerFactory.getLogger(FootprintsAdapter.class);
+
+    /** Adapter version constant. */
+    public static String VERSION;
+    /** Load the properties version from the version.properties file. */
+    static {
+        try {
+            java.util.Properties properties = new java.util.Properties();
+            properties.load(FootprintsAdapter.class.getResourceAsStream("/"+FootprintsAdapter.class.getName()+".version"));
+            VERSION = properties.getProperty("version");
+        } catch (IOException e) {
+            logger.warn("Unable to load "+FootprintsAdapter.class.getName()+" version properties.", e);
+            VERSION = "Unknown";
+        }
+    }
     
     /** Defines the collection of property names for the adapter */
     public static class Properties {
@@ -81,7 +95,7 @@ public class FootprintsAdapter implements BridgeAdapter {
     
     @Override
     public String getVersion() {
-        return "1.0.0";
+        return VERSION;
     }
     
     @Override
@@ -107,11 +121,6 @@ public class FootprintsAdapter implements BridgeAdapter {
 
     @Override
     public Count count(BridgeRequest request) throws BridgeError {
-        // Log the access
-        logger.trace("Counting the Salesforce Records");
-        logger.trace("  Structure: " + request.getStructure());
-        logger.trace("  Query: " + request.getQuery());
-        
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
             throw new BridgeError("Invalid Structure: '" + request.getStructure() + "' is not a valid structure");
         }
@@ -166,12 +175,6 @@ public class FootprintsAdapter implements BridgeAdapter {
 
     @Override
     public Record retrieve(BridgeRequest request) throws BridgeError {
-        // Log the access
-        logger.trace("Retrieving ServiceNow Record");
-        logger.trace("  Structure: " + request.getStructure());
-        logger.trace("  Query: " + request.getQuery());
-        logger.trace("  Fields: " + request.getFieldString());
-        
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
             throw new BridgeError("Invalid Structure: '" + request.getStructure() + "' is not a valid structure");
         }
@@ -240,12 +243,6 @@ public class FootprintsAdapter implements BridgeAdapter {
 
     @Override
     public RecordList search(BridgeRequest request) throws BridgeError {
-        // Log the access
-        logger.trace("Searching ServiceNow Records");
-        logger.trace("  Structure: " + request.getStructure());
-        logger.trace("  Query: " + request.getQuery());
-        logger.trace("  Fields: " + request.getFieldString());
-        
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
             throw new BridgeError("Invalid Structure: '" + request.getStructure() + "' is not a valid structure");
         }
