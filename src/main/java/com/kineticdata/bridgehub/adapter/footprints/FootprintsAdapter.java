@@ -29,7 +29,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -39,10 +39,10 @@ public class FootprintsAdapter implements BridgeAdapter {
     /*----------------------------------------------------------------------------------------------
      * PROPERTIES
      *--------------------------------------------------------------------------------------------*/
-    
+
     /** Defines the adapter display name */
     public static final String NAME = "Footprints Bridge";
-    
+
     /** Defines the logger */
     protected static final org.slf4j.Logger logger = LoggerFactory.getLogger(FootprintsAdapter.class);
 
@@ -59,14 +59,14 @@ public class FootprintsAdapter implements BridgeAdapter {
             VERSION = "Unknown";
         }
     }
-    
+
     /** Defines the collection of property names for the adapter */
     public static class Properties {
         public static final String PROPERTY_USERNAME = "Username";
         public static final String PROPERTY_PASSWORD = "Password";
         public static final String PROPERTY_BASE_URL = "Footprints Url";
     }
-    
+
     private final ConfigurablePropertyMap properties = new ConfigurablePropertyMap(
         new ConfigurableProperty(Properties.PROPERTY_USERNAME).setIsRequired(true),
         new ConfigurableProperty(Properties.PROPERTY_PASSWORD).setIsRequired(true).setIsSensitive(true),
@@ -76,11 +76,11 @@ public class FootprintsAdapter implements BridgeAdapter {
     private String username;
     private String password;
     private String baseUrl;
-    
+
     /*---------------------------------------------------------------------------------------------
      * SETUP METHODS
      *-------------------------------------------------------------------------------------------*/
-    
+
     @Override
     public void initialize() throws BridgeError {
         this.username = properties.getValue(Properties.PROPERTY_USERNAME);
@@ -92,29 +92,29 @@ public class FootprintsAdapter implements BridgeAdapter {
     public String getName() {
         return NAME;
     }
-    
+
     @Override
     public String getVersion() {
         return VERSION;
     }
-    
+
     @Override
     public void setProperties(Map<String,String> parameters) {
         properties.setValues(parameters);
     }
-    
+
     @Override
     public ConfigurablePropertyMap getProperties() {
         return properties;
     }
-    
+
     /**
      * Structures that are valid to use in the bridge
      */
     public static final List<String> VALID_STRUCTURES = Arrays.asList(new String[] {
         "Devices"
     });
-    
+
     /*---------------------------------------------------------------------------------------------
      * IMPLEMENTATION METHODS
      *-------------------------------------------------------------------------------------------*/
@@ -124,41 +124,41 @@ public class FootprintsAdapter implements BridgeAdapter {
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
             throw new BridgeError("Invalid Structure: '" + request.getStructure() + "' is not a valid structure");
         }
-        
+
         FootprintsQualificationParser parser = new FootprintsQualificationParser();
         String query = parser.parse(request.getQuery(),request.getParameters());
-        
+
 //        // Getting a different httpClient that will work with all SSL Certificates (for use in dev environments)
-//        DefaultHttpClient client;
+//        HttpClient client;
 //        try {
 //            client = getTestingHttpClient();
 //        } catch (Exception e) {
 //            throw new BridgeError(e);
 //        }
-//        
-        HttpClient client = new DefaultHttpClient();
+//
+        HttpClient client = HttpClients.createDefault();
         HttpResponse response;
         HttpGet get = new HttpGet(String.format("%s/api/1/devices?source=index&offset=0&query=%s",this.baseUrl,query));
-        
+
         // Setting up the basic authentication and appending it to the HttpPost
         // object
         logger.trace("Appending the authorization header to the post call");
         String creds = this.username + ":" + this.password;
         byte[] basicAuthBytes = Base64.encodeBase64(creds.getBytes());
         get.setHeader("Authorization", "Basic " + new String(basicAuthBytes));
-        
+
         String output = "";
         try {
             response = client.execute(get);
             HttpEntity entity = response.getEntity();
             output = EntityUtils.toString(entity);
             logger.trace("Request response code: " + response.getStatusLine().getStatusCode());
-        } 
+        }
         catch (IOException e) {
             logger.error(e.getMessage());
             throw new BridgeError("Unable to make a connection to Footprints.", e);
         }
-        
+
         String countStr = "";
         JSONObject jsonOutput = (JSONObject)JSONValue.parse(output);
         for (Object key : jsonOutput.keySet()) {
@@ -166,7 +166,7 @@ public class FootprintsAdapter implements BridgeAdapter {
                 countStr = jsonOutput.get("Total").toString();
             }
         }
-        
+
         Long count = Long.valueOf(countStr);
 
         // Return the response
@@ -178,30 +178,30 @@ public class FootprintsAdapter implements BridgeAdapter {
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
             throw new BridgeError("Invalid Structure: '" + request.getStructure() + "' is not a valid structure");
         }
-        
+
         FootprintsQualificationParser parser = new FootprintsQualificationParser();
         String query = parser.parse(request.getQuery(),request.getParameters());
         List<String> fields = request.getFields();
-        
+
 //        // Getting a different httpClient that will work with all SSL Certificates (for use in dev environments)
-//        DefaultHttpClient client;
+//        HttpClient client;
 //        try {
 //            client = getTestingHttpClient();
 //        } catch (Exception e) {
 //            throw new BridgeError(e);
 //        }
-        
-        HttpClient client = new DefaultHttpClient();
+
+        HttpClient client = HttpClients.createDefault();
         HttpResponse response;
         HttpGet get = new HttpGet(String.format("%s/api/1/devices?source=index&query=%s",this.baseUrl,query));
-        
+
         // Setting up the basic authentication and appending it to the HttpPost
         // object
         logger.trace("Appending the authorization header to the post call");
         String creds = this.username + ":" + this.password;
         byte[] basicAuthBytes = Base64.encodeBase64(creds.getBytes());
         get.setHeader("Authorization", "Basic " + new String(basicAuthBytes));
-        
+
         String output = "";
         try {
             response = client.execute(get);
@@ -213,7 +213,7 @@ public class FootprintsAdapter implements BridgeAdapter {
             logger.error(e.getMessage());
             throw new BridgeError("Unable to make a connection to Footprints.", e);
         }
-        
+
         Record record = new Record(null);
         JSONObject jsonOutput = (JSONObject)JSONValue.parse(output);
         if (jsonOutput != null && jsonOutput.containsKey("Total")) {
@@ -246,48 +246,48 @@ public class FootprintsAdapter implements BridgeAdapter {
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
             throw new BridgeError("Invalid Structure: '" + request.getStructure() + "' is not a valid structure");
         }
-        
+
         FootprintsQualificationParser parser = new FootprintsQualificationParser();
         String query = parser.parse(request.getQuery(),request.getParameters());
         List<String> fields = request.getFields();
-        
+
 //        // Getting a different httpClient that will work with all SSL Certificates (for use in dev environments)
-//        DefaultHttpClient client;
+//        HttpClient client;
 //        try {
 //            client = getTestingHttpClient();
 //        } catch (Exception e) {
 //            throw new BridgeError(e);
 //        }
-        
-        HttpClient client = new DefaultHttpClient();
+
+        HttpClient client = HttpClients.createDefault();
         HttpResponse response;
         HttpGet get = new HttpGet(String.format("%s/api/1/devices?source=index&query=%s&offset=0",this.baseUrl,query));
-        
+
         // Setting up the basic authentication and appending it to the HttpPost
         // object
         logger.trace("Appending the authorization header to the post call");
         String creds = this.username + ":" + this.password;
         byte[] basicAuthBytes = Base64.encodeBase64(creds.getBytes());
         get.setHeader("Authorization", "Basic " + new String(basicAuthBytes));
-        
+
         String output = "";
         try {
             response = client.execute(get);
             HttpEntity entity = response.getEntity();
             output = EntityUtils.toString(entity);
             logger.trace("Request response code: " + response.getStatusLine().getStatusCode());
-        } 
+        }
         catch (IOException e) {
             logger.error(e.getMessage());
             throw new BridgeError("Unable to make a connection to Footprints.", e);
         }
-        
+
         String countStr = "";
-        
+
         logger.debug("Search Output");
         logger.debug(output);
-        
-        ArrayList<Record> records = new ArrayList<Record>(); 
+
+        ArrayList<Record> records = new ArrayList<Record>();
         JSONObject jsonOutput = (JSONObject)JSONValue.parse(output);
         if (jsonOutput != null && jsonOutput.containsKey("Total")) {
             for (Object o : jsonOutput.keySet()) {
@@ -324,11 +324,11 @@ public class FootprintsAdapter implements BridgeAdapter {
         // Return the response
         return new RecordList(fields, records, metadata);
     }
-    
+
     // Both the getTrustingManger and getTestingHttpClient methods SHOULD NOT
     // BE USED IN A PRODUCTION ENVIRONMENT.
-    private DefaultHttpClient getTestingHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
-        DefaultHttpClient httpclient = new DefaultHttpClient();
+    private HttpClient getTestingHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
+        HttpClient httpclient = HttpClients.createDefault();
 
         X509HostnameVerifier hostnameVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
         SSLContext sc = SSLContext.getInstance("SSL");
@@ -338,10 +338,10 @@ public class FootprintsAdapter implements BridgeAdapter {
         socketFactory.setHostnameVerifier(hostnameVerifier);
         Scheme sch = new Scheme("https", 443, socketFactory);
         httpclient.getConnectionManager().getSchemeRegistry().register(sch);
-        
+
         return httpclient;
     }
-    
+
     private TrustManager[] getTrustingManager() {
         TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
             @Override
@@ -362,5 +362,5 @@ public class FootprintsAdapter implements BridgeAdapter {
         } };
         return trustAllCerts;
     }
-    
+
 }
